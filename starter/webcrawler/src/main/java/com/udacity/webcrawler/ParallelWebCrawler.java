@@ -102,7 +102,12 @@ final class ParallelWebCrawler implements WebCrawler {
         }
       }
 
+      if(visitedUrls.contains(url)) {
+        return;
+      }
+      
       visitedUrls.add(url);
+
       PageParser.Result result = parserFactory.get(url).parse();
 
       for (Map.Entry<String, Integer> entry : result.getWordCounts().entrySet()) {
