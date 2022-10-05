@@ -16,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -81,7 +83,7 @@ final class ParallelWebCrawler implements WebCrawler {
     private final int maxDepth;
     private final Map<String, Integer> counts;
     private final Set<String> visitedUrls;
-
+    private final Lock lock = new ReentrantLock();
     public CrawlInterval(String url, Instant deadline, int maxDepth, Map<String, Integer> counts, Set<String> visitedUrls) {
       this.url = url;
       this.deadline = deadline;
@@ -102,11 +104,15 @@ final class ParallelWebCrawler implements WebCrawler {
         }
       }
 
-      if(visitedUrls.contains(url)) {
-        return;
+      try {
+        lock.lock();
+        if (visitedUrls.contains(url)) {
+          return;
+        }
+        visitedUrls.add(url);
+      } finally {
+        lock.unlock();
       }
-      
-      visitedUrls.add(url);
 
       PageParser.Result result = parserFactory.get(url).parse();
 
